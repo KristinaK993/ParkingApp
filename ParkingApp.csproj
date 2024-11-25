@@ -17,6 +17,9 @@
     <Compile Update="Program.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
+    <Compile Update="UserDataManager.cs">
+      <CopyToOutputDirectory> </CopyToOutputDirectory>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
