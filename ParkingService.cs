@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Spectre.Console;
 
 public class ParkingService : IParkingService
 {
@@ -30,17 +31,35 @@ public class ParkingService : IParkingService
     }
     public void EndParking(User user)
     {
-        var activeSession = user.ParkingHistory.LastOrDefault( s => s.EndTime > DateTime.Now);
-        if(activeSession != null)
+        var activeSession = user.ParkingHistory.LastOrDefault(s => s.EndTime > DateTime.Now);
+        if (activeSession != null)
         {
-            decimal totalCost = activeSession.Cost;
-            Console.WriteLine($"Parking ended for: {activeSession.LicensePlate}." + $"Total cost paid: {totalCost} SEK");
+            // Räkna ut faktisk tid som har passerat
+            var actualDuration = DateTime.Now - activeSession.StartTime;
+            var totalMinutes = (decimal)actualDuration.TotalMinutes;
+
+            // Hämta priset per minut
+            var ratePerHour = _locationRates[activeSession.Location];
+            var ratePerMinute = ratePerHour / 60;
+
+            // Dynamisk kostnadsberäkning
+            var actualCost = Math.Round(ratePerMinute * totalMinutes, 2);
+
+            // Visa resultat
+            AnsiConsole.Markup($"[green]Parking ended for {activeSession.LicensePlate}.[/]\n");
+            AnsiConsole.Markup($"Total time parked: [yellow]{Math.Floor(totalMinutes / 60)}h {totalMinutes % 60}min[/].\n");
+            AnsiConsole.Markup($"You owe: [yellow]{actualCost} SEK[/].\n");
+
+            // Uppdatera historik
+            activeSession.EndTime = DateTime.Now;
+            activeSession.Cost = actualCost;
         }
         else
         {
-            Console.WriteLine("No active parking sessions to end.");
+            AnsiConsole.Markup("[red]No active parking sessions to end.[/]\n");
         }
     }
+
     public void ShowHistory(User user)
     {
         if (!user.ParkingHistory.Any())
