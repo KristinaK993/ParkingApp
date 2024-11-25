@@ -1,4 +1,5 @@
-﻿using Figgle;
+﻿using System.Text.RegularExpressions;
+using Figgle;
 using Spectre.Console;
 
 public static class Program
@@ -11,7 +12,7 @@ public static class Program
         User user = null;
         while (user == null)
         {
-            AnsiConsole.WriteLine(FiggleFonts.Standard.Render("Parking App"));
+            AnsiConsole.WriteLine(FiggleFonts.Standard.Render("Parking App")); // Visa logotypen en gång vid start
 
             var action = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
@@ -28,7 +29,7 @@ public static class Program
             }
         }
 
-        MainMenu(user, parkingService);
+        MainMenu(user, parkingService); // Gå till huvudmenyn efter att användaren har loggat in
     }
 
     static User Login()
@@ -46,7 +47,6 @@ public static class Program
         AnsiConsole.Markup($"[green]Welcome back, {user.Name}![/]\n");
         return user;
     }
-
 
     static User RegisterUser()
     {
@@ -76,18 +76,16 @@ public static class Program
 
     static void MainMenu(User user, ParkingService parkingService)
     {
+        // Visa parkeringspriserna endast en gång vid första inloggningen
+        AnsiConsole.Markup("[underline]Parking Rates[/]:\n");
+        foreach (var rate in parkingService.GetParkingRates())
+        {
+            AnsiConsole.Markup($"- [yellow]{rate.Key}[/]: [green]{rate.Value} SEK/hour[/]\n");
+        }
+        AnsiConsole.WriteLine();
+
         while (true)
         {
-            AnsiConsole.WriteLine(FiggleFonts.Standard.Render("Parking App"));
-
-            // Visa parkeringspriserna
-            AnsiConsole.Markup("[underline]Parking Rates[/]:\n");
-            foreach (var rate in parkingService.GetParkingRates())
-            {
-                AnsiConsole.Markup($"- [yellow]{rate.Key}[/]: [green]{rate.Value} SEK/hour[/]\n");
-            }
-            AnsiConsole.WriteLine();
-
             var choice = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
                     .Title("What would you like to do?")
@@ -99,10 +97,10 @@ public static class Program
                     StartParking(parkingService, user);
                     break;
                 case "End Parking":
-                    parkingService.EndParking(user);
+                    parkingService.EndParking(user);  
                     break;
                 case "Show History":
-                    parkingService.ShowHistory(user);
+                    parkingService.ShowHistory(user); 
                     break;
                 case "Exit":
                     UserDataManager.SaveUser(user);
@@ -113,7 +111,14 @@ public static class Program
 
     static void StartParking(ParkingService parkingService, User user)
     {
-        var licensePlate = AnsiConsole.Ask<string>("Enter your [green]license plate[/]:");
+        string licensePlate;
+
+        //Loop för att säkerställa att reg nr är ok
+        do
+        {
+            licensePlate = AnsiConsole.Ask<string>("Enter your [green]license plate (3 digits and 3 letters)[/]:");
+        } while (!IsValidLicensePlate(licensePlate)); // Loop till reg nr är giltigt
+
         var location = AnsiConsole.Prompt(
             new SelectionPrompt<string>()
                 .Title("Select parking location:")
@@ -135,4 +140,19 @@ public static class Program
         }
     }
 
+    // Funktion för att validera regnummer (3 bokstäver och 3 siffror)
+    static bool IsValidLicensePlate(string plate)
+    {
+        // Regex för att matcha ett regnummer som består av 3 siffror och 3 bokstäver
+        string pattern = @"^[A-Za-z]{3}\d{3}$";
+        if (Regex.IsMatch(plate, pattern))
+        {
+            return true;
+        }
+        else
+        {
+            AnsiConsole.Markup("[red]Invalid license plate! Please enter a valid Swedish license plate (3 digits and 3 letters).[/]\n");
+            return false;
+        }
+    }
 }

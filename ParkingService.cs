@@ -31,28 +31,25 @@ public class ParkingService : IParkingService
     }
     public void EndParking(User user)
     {
+        // Hitta en pågående parkering
         var activeSession = user.ParkingHistory.LastOrDefault(s => s.EndTime > DateTime.Now);
+
         if (activeSession != null)
         {
-            // Räkna ut faktisk tid som har passerat
-            var actualDuration = DateTime.Now - activeSession.StartTime;
-            var totalMinutes = (decimal)actualDuration.TotalMinutes;
+            // Beräkna parkeringens varaktighet
+            TimeSpan parkingDuration = DateTime.Now - activeSession.StartTime; // Här använder vi aktuellt datum och tid för att beräkna parkeringens varaktighet
 
-            // Hämta priset per minut
-            var ratePerHour = _locationRates[activeSession.Location];
-            var ratePerMinute = ratePerHour / 60;
+            // Beräkna den totala kostnaden baserat på varaktigheten
+            decimal totalCost = activeSession.Cost * ((decimal)parkingDuration.TotalHours); // Räkna om kostnaden baserat på den faktiska parkeringstiden
 
-            // Dynamisk kostnadsberäkning
-            var actualCost = Math.Round(ratePerMinute * totalMinutes, 2);
+            // Skriv ut resultatet
+            AnsiConsole.Markup($"[green]Parking ended for: {activeSession.LicensePlate}[/]\n");
+            AnsiConsole.Markup($"Total parking duration: [yellow]{parkingDuration.Hours} hours and {parkingDuration.Minutes} minutes[/]\n");
+            AnsiConsole.Markup($"Total cost: [yellow]{totalCost:C2} SEK[/]\n");
 
-            // Visa resultat
-            AnsiConsole.Markup($"[green]Parking ended for {activeSession.LicensePlate}.[/]\n");
-            AnsiConsole.Markup($"Total time parked: [yellow]{Math.Floor(totalMinutes / 60)}h {totalMinutes % 60}min[/].\n");
-            AnsiConsole.Markup($"You owe: [yellow]{actualCost} SEK[/].\n");
-
-            // Uppdatera historik
-            activeSession.EndTime = DateTime.Now;
-            activeSession.Cost = actualCost;
+            // Vänta på en tangenttryckning för att återgå till menyn
+            AnsiConsole.Markup("[yellow]Press any key to return to the menu...[/]");
+            Console.ReadKey(true);
         }
         else
         {
@@ -67,13 +64,25 @@ public class ParkingService : IParkingService
             Console.WriteLine("No parking history available.");
             return;
         }
-        Console.WriteLine("Parking History: ");
+
+        AnsiConsole.Markup("[underline]Parking History[/]:\n");
+
         foreach (var session in user.ParkingHistory)
         {
-            Console.WriteLine($"- {session.LicensePlate} at {session.Location}, " +
-                              $"from {session.StartTime} to {session.EndTime}, Cost: {session.Cost} SEK.");
+            // Beräkna parkeringens varaktighet
+            TimeSpan parkingDuration = session.EndTime - session.StartTime;
+
+            // Visa parkeringens historik
+            AnsiConsole.Markup($"- [yellow]{session.LicensePlate}[/] at [green]{session.Location}[/], " +
+                              $"from [yellow]{session.StartTime}[/] to [yellow]{session.EndTime}[/], " +
+                              $"Duration: [yellow]{parkingDuration.Hours} hours and {parkingDuration.Minutes} minutes[/], " +
+                              $"Cost: [green]{session.Cost} SEK[/]\n");
         }
     }
+
+
+
+
     public Dictionary<string, decimal> GetParkingRates()
     {
         return _locationRates;
