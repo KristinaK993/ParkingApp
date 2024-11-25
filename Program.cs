@@ -121,10 +121,16 @@ public static class Program
         try
         {
             parkingService.StartParking(licensePlate, location, hours, user);
+            AnsiConsole.Markup("\n[green]Parking has started successfully![/]\n");
+            AnsiConsole.Markup("[yellow]Press any key to return to the menu...[/]");
+            Console.ReadKey(true); // Vänta på en knapptryckning innan vi återgår till menyn.
         }
         catch (Exception ex)
         {
             AnsiConsole.Markup($"[red]Error:[/] {ex.Message}\n");
+            AnsiConsole.Markup("[yellow]Press any key to return to the menu...[/]");
+            Console.ReadKey(true); // Vänta på en knapptryckning om det sker ett fel.
         }
     }
+
 }
