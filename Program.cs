@@ -33,18 +33,20 @@ public static class Program
 
     static User Login()
     {
-        var cardNumber = AnsiConsole.Ask<string>("Enter your [green]5-digit card number[/]:");
+        string cardNumber = AnsiConsole.Ask<string>("Enter your [green]card number[/]:").Trim();
 
         var user = UserDataManager.FindUser(cardNumber);
-        if (user != null)
+
+        if (user == null)
         {
-            AnsiConsole.Markup("[green]Login successful![/]\n");
-            return user;
+            AnsiConsole.Markup("[red]Invalid card number. Please try again.[/]\n");
+            return null;
         }
 
-        AnsiConsole.Markup("[red]Invalid card number. Try again.[/]\n");
-        return null;
+        AnsiConsole.Markup($"[green]Welcome back, {user.Name}![/]\n");
+        return user;
     }
+
 
     static User RegisterUser()
     {
